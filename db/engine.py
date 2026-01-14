@@ -11,8 +11,13 @@ class Engine:
     def execute(self, command: str):
         command = command.strip()
 
-        if command.upper().startswith("CREATE TABLE"):
+        upper = command.upper()
+
+        if upper.startswith("CREATE TABLE"):
             return self._create_table(command)
+
+        if upper.startswith("INSERT INTO"):
+            return self._insert_into(command)
 
         raise ValueError(f"Unsupported command: {command}")
 
@@ -53,3 +58,42 @@ class Engine:
 
         except Exception as e:
             raise ValueError(f"Invalid CREATE TABLE syntax: {e}")
+
+    def _insert_into(self, command: str):
+        """
+        Example:
+        INSERT INTO users VALUES (1, 'a@b.com', 'Alice')
+        """
+        try:
+            before_paren, inside_paren = command.split("(", 1)
+            inside_paren = inside_paren.rstrip(")")
+
+            parts = before_paren.strip().split()
+
+            table_name = parts[2]
+
+            table = self.database.get_table(table_name)
+
+            raw_values = [v.strip() for v in inside_paren.split(",")]
+
+            values = []
+            for v in raw_values:
+                 # Remove quotes for TEXT
+                if v.startswith("'") and v.endswith("'"):
+                    values.append(v[1:-1])
+                else:
+                    values.append(int(v))
+            if len(values) != len(table.columns):
+                raise ValueError("Common count does not match value count")
+
+            row = {
+                table.columns[i].name: values[i]
+                for i in range(len(values))
+            }
+
+            table.insert(row)
+
+            return f"1 row inserted into '{table_name}'"
+
+        except Exception as e:
+            raise ValueError(f"Invalid INSERT syntax: {e}")
