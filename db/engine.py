@@ -19,6 +19,9 @@ class Engine:
         if upper.startswith("INSERT INTO"):
             return self._insert_into(command)
 
+        if upper.startswith("SELECT"):
+            return self._select(command)
+
         raise ValueError(f"Unsupported command: {command}")
 
     def _create_table(self, command: str):
@@ -97,3 +100,22 @@ class Engine:
 
         except Exception as e:
             raise ValueError(f"Invalid INSERT syntax: {e}")
+
+    def _select(self, command: str):
+        """
+        Example:
+        SELECT * FROM users
+        """
+        try:
+            parts = command.strip().split()
+
+            if parts[1] != "*":
+                raise ValueError("Only Select * is supported")
+
+            table_name = parts[3]
+            table = self.database.get_table(table_name)
+
+            return table.select_all()
+
+        except Exception as e:
+            raise ValueError(f"Invalid SELECT syntax: {e}")
